@@ -9,4 +9,5 @@ edition = "2018"
 [dependencies]
 mnist = "0.4.1"
 rulinalg = "0.4.2"
+rand = "0.7.3"
 aesir3 = { path = "../aesir3" }
