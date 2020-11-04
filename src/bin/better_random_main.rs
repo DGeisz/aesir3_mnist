@@ -1,7 +1,7 @@
 use mnist::{Mnist, MnistBuilder};
-use aesir3_mnist::random_diehl_layer::RandomDiehlLayer;
+use aesir3_mnist::better_random_layer::RandomDealLayer;
 
-const NUM_NEURONS: usize = 1600;
+const NUM_NEURONS: usize = 400;
 const MIN_WEIGHT: f32 = -10.0;
 const MAX_WEIGHT: f32 = 10.0;
 
@@ -34,7 +34,7 @@ fn main() {
         test_img.push(val as f32 / 255.0);
     }
 
-    let random_layer = RandomDiehlLayer::new(
+    let random_layer = RandomDealLayer::new(
         train_img,
         trn_lbl,
         NUM_NEURONS,

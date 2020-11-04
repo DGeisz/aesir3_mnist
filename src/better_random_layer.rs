@@ -30,17 +30,18 @@ impl RandomNeuron {
     }
 }
 
-pub struct RandomLayerClassifier {
+pub struct RandomDealLayerClassifier {
     neuron_class: Vec<u8>,
-    class_neuron_count: [u32; 10],
+    neuron_class_weight: Vec<f32>,
+    class_neuron_total_weight: [f32; 10],
 }
 
-pub struct RandomDiehlLayer {
+pub struct RandomDealLayer {
     neurons: Vec<RandomNeuron>,
-    classifier: RandomLayerClassifier,
+    classifier: RandomDealLayerClassifier,
 }
 
-impl RandomDiehlLayer {
+impl RandomDealLayer {
     pub fn new(
         train_img_vec: Vec<f32>, // This should already be modified so values are between 0 and 1
         train_lbl_vec: Vec<u8>,
@@ -49,7 +50,7 @@ impl RandomDiehlLayer {
 
         min_weight: f32,
         max_weight: f32,
-    ) -> RandomDiehlLayer {
+    ) -> RandomDealLayer {
         let mut neurons = Vec::new();
 
         for _ in 0..num_neurons {
@@ -88,7 +89,7 @@ impl RandomDiehlLayer {
                 class_measure[label] += neuron.get_charge();
             }
 
-            if img_index % 100 == 0 {
+            if img_index % 1000 == 0 {
                 println!("Labeled img: {}", img_index);
             }
         }
@@ -99,32 +100,72 @@ impl RandomDiehlLayer {
         }
 
         let mut neuron_classes = Vec::new();
-        let mut class_count = [0_u32; 10];
+        let mut neuron_class_weights = Vec::new();
+        let mut neuron_class_total_weights = [0.0_f32; 10];
 
-        for class_measure in neuron_class_measures.iter() {
+        for class_measure in &neuron_class_measures {
             let mut max_index = 0;
             let mut max_measure = class_measure[0];
+
+            let mut total_measure = class_measure[0];
 
             for i in 1..10 {
                 if class_measure[i] > max_measure {
                     max_measure = class_measure[i];
                     max_index = i as u8;
                 }
+
+                total_measure += class_measure[i];
             }
 
+            let weight = (max_measure - (total_measure / 10.)) / (total_measure / 10.).abs();
+
             neuron_classes.push(max_index);
-            class_count[max_index as usize] += 1;
+            neuron_class_weights.push(weight);
+            neuron_class_total_weights[max_index as usize] += weight;
         }
 
-        let layer_classifier = RandomLayerClassifier {
+
+        let classifier = RandomDealLayerClassifier {
             neuron_class: neuron_classes,
-            class_neuron_count: class_count,
+            neuron_class_weight: neuron_class_weights,
+            class_neuron_total_weight: neuron_class_total_weights
         };
 
-        RandomDiehlLayer {
+        RandomDealLayer {
             neurons,
-            classifier: layer_classifier,
+            classifier
         }
+
+
+        // let mut neuron_classes = Vec::new();
+        // let mut class_count = [0_u32; 10];
+        //
+        // for class_measure in neuron_class_measures.iter() {
+        //     let mut max_index = 0;
+        //     let mut max_measure = class_measure[0];
+        //
+        //     for i in 1..10 {
+        //         if class_measure[i] > max_measure {
+        //             max_measure = class_measure[i];
+        //             max_index = i as u8;
+        //         }
+        //     }
+        //
+        //     neuron_classes.push(max_index);
+        //     class_count[max_index as usize] += 1;
+        // }
+        //
+        // let layer_classifier = RandomLayerClassifier {
+        //     neuron_class: neuron_classes,
+        //     class_neuron_count: class_count,
+        // };
+        //
+        // RandomDiehlLayer {
+        //     neurons,
+        //     classifier: layer_classifier,
+        // }
+        // unimplemented!()
     }
 
     pub fn classify_img(&self, img_vec: &Vec<f32>, img_index: usize) -> u8 {
@@ -143,15 +184,15 @@ impl RandomDiehlLayer {
 
         let mut total_class_measure = [0.0; 10];
 
-        for (neuron, class) in self.neurons.iter().zip(self.classifier.neuron_class.iter()) {
-            total_class_measure[*class as usize] += neuron.get_charge();
+        for (neuron, (class, weight)) in self.neurons.iter().zip(self.classifier.neuron_class.iter().zip(self.classifier.neuron_class_weight.iter())) {
+            total_class_measure[*class as usize] += neuron.get_charge() * weight;
         }
 
         let mut max_index = 0;
-        let mut max_average_measure = total_class_measure[0] / self.classifier.class_neuron_count[0] as f32;
+        let mut max_average_measure = total_class_measure[0] / self.classifier.class_neuron_total_weight[0] as f32;
 
         for i in 1..10 {
-            let average_measure = total_class_measure[i] / self.classifier.class_neuron_count[i] as f32;
+            let average_measure = total_class_measure[i] / self.classifier.class_neuron_total_weight[i] as f32;
 
             if average_measure > max_average_measure {
                 max_average_measure = average_measure;
@@ -172,7 +213,7 @@ impl RandomDiehlLayer {
                 num_correct += 1.;
             }
 
-            if img_index % 100 == 0 {
+            if img_index % 1000 == 0 {
                 println!("Finished classification: {}", img_index);
             }
         }

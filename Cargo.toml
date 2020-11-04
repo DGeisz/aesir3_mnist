@@ -13,6 +13,9 @@ path = "src/bin/main.rs"
 name = "random"
 path = "src/bin/random_main.rs"
 
+[[bin]]
+name = "better-random"
+path = "src/bin/better_random_main.rs"
 
 [dependencies]
 mnist = "0.4.1"

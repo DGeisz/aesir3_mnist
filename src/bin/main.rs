@@ -1,4 +1,3 @@
-use crate::mnist_layer::Aesir3Layer;
 use mnist::{Mnist, MnistBuilder};
 use rand::Rng;
 use aesir3_mnist::mnist_layer::Aesir3Layer;
@@ -26,7 +25,7 @@ fn main() {
         trn_img,
         trn_lbl,
         tst_img,
-        tst_lbl,
+        // tst_lbl,
         ..
     } = MnistBuilder::new()
         .label_format_digit()
